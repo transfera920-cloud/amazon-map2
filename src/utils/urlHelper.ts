@@ -28,3 +28,9 @@ export function getEffectiveGpxUrl(gpxUrl?: string, routeName?: string): string 
   }
   return 'https://hiking.biji.co/index.php?q=trail&act=gpx_list';
 }
+
+/**
+ * API 前綴：正式建置為 '/tool16'，開發預覽為 ''。
+ * 由 vite.config.ts 的 base 決定，避免 /api 請求打到主站根目錄。
+ */
+export const API_BASE: string = (((import.meta as any).env?.BASE_URL as string) || '/').replace(/\/+$/, '');

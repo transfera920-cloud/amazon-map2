@@ -32,9 +32,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xs sm:text-sm font-bold tracking-widest uppercase text-[#f8fafc] group-hover:text-[#34d399] transition-colors">
+                <div className="text-xs sm:text-sm font-bold tracking-widest uppercase text-[#f8fafc] group-hover:text-[#34d399] transition-colors">
                   {siteSettings.orgName || '亞馬遜國家山岳協會'}
-                </h1>
+                </div>
                 {siteSettings.badgeText && (
                   <span className="hidden sm:inline-block text-[10px] uppercase font-mono font-bold tracking-wider px-1.5 py-0.5 rounded-xs bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30">
                     {siteSettings.badgeText}

@@ -1,7 +1,8 @@
+import { API_BASE } from '../utils/urlHelper';
 import { MainRoute, SiteSettings, SaveRoutePayload } from '../types';
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
-  const res = await fetch('/api/settings');
+  const res = await fetch(API_BASE + '/api/settings');
   if (!res.ok) {
     throw new Error(`Failed to load settings: ${res.statusText}`);
   }
@@ -10,7 +11,7 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
 }
 
 export async function updateSiteSettings(settings: SiteSettings): Promise<SiteSettings> {
-  const res = await fetch('/api/settings', {
+  const res = await fetch(API_BASE + '/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(settings)
@@ -23,7 +24,7 @@ export async function updateSiteSettings(settings: SiteSettings): Promise<SiteSe
 }
 
 export async function fetchAllRoutes(): Promise<MainRoute[]> {
-  const res = await fetch('/api/routes');
+  const res = await fetch(API_BASE + '/api/routes');
   if (!res.ok) {
     throw new Error(`Failed to fetch routes: ${res.statusText}`);
   }
@@ -32,7 +33,7 @@ export async function fetchAllRoutes(): Promise<MainRoute[]> {
 }
 
 export async function fetchRouteById(id: string): Promise<MainRoute> {
-  const res = await fetch(`/api/routes/${encodeURIComponent(id)}`);
+  const res = await fetch(`${API_BASE}/api/routes/${encodeURIComponent(id)}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch route ${id}: ${res.statusText}`);
   }
@@ -41,7 +42,7 @@ export async function fetchRouteById(id: string): Promise<MainRoute> {
 }
 
 export async function saveOrUpdateRouteApi(route: SaveRoutePayload & { id: string }): Promise<MainRoute> {
-  const res = await fetch(`/api/routes/${encodeURIComponent(route.id)}`, {
+  const res = await fetch(`${API_BASE}/api/routes/${encodeURIComponent(route.id)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(route)
@@ -55,7 +56,7 @@ export async function saveOrUpdateRouteApi(route: SaveRoutePayload & { id: strin
 }
 
 export async function overwriteRouteWithExcelApi(route: SaveRoutePayload & { id: string }): Promise<MainRoute> {
-  const res = await fetch(`/api/routes/${encodeURIComponent(route.id)}/excel-overwrite`, {
+  const res = await fetch(`${API_BASE}/api/routes/${encodeURIComponent(route.id)}/excel-overwrite`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(route)
@@ -69,7 +70,7 @@ export async function overwriteRouteWithExcelApi(route: SaveRoutePayload & { id:
 }
 
 export async function deleteRouteApi(routeId: string): Promise<boolean> {
-  const res = await fetch(`/api/routes/${encodeURIComponent(routeId)}`, {
+  const res = await fetch(`${API_BASE}/api/routes/${encodeURIComponent(routeId)}`, {
     method: 'DELETE'
   });
   if (!res.ok) {
@@ -81,7 +82,7 @@ export async function deleteRouteApi(routeId: string): Promise<boolean> {
 }
 
 export async function syncAllRoutesApi(routes: SaveRoutePayload[]): Promise<MainRoute[]> {
-  const res = await fetch('/api/routes/sync', {
+  const res = await fetch(API_BASE + '/api/routes/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ routes })
@@ -95,7 +96,7 @@ export async function syncAllRoutesApi(routes: SaveRoutePayload[]): Promise<Main
 }
 
 export async function resetRoutesToDefaultsApi(): Promise<MainRoute[]> {
-  const res = await fetch('/api/routes/reset', {
+  const res = await fetch(API_BASE + '/api/routes/reset', {
     method: 'POST'
   });
   if (!res.ok) {

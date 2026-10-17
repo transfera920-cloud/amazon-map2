@@ -27,6 +27,7 @@ import {
   Square,
   Filter
 } from 'lucide-react';
+import { API_BASE } from '../utils/urlHelper';
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -157,7 +158,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/admin/login', {
+      const res = await fetch(API_BASE + '/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.trim(), password: password.trim() })
@@ -177,7 +178,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin/logout', { method: 'POST' });
+      await fetch(API_BASE + '/api/admin/logout', { method: 'POST' });
     } catch {}
     onSetIsAdminLoggedIn(false);
     onClose();

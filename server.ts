@@ -34,6 +34,25 @@ const PORT = 3000;
 // Requirement 5: 加上 app.set('trust proxy', 1)
 app.set('trust proxy', 1);
 
+// ----------------- /tool16 子路徑處理 ----------------- //
+// 網站實際掛在 https://amazon-hike.com/tool16/。
+// 不論 Cloudflare 是否把 /tool16 前綴保留傳進來，這裡都能正確處理：
+//   /tool16        → 301 到 /tool16/（避免兩個網址重複收錄）
+//   /tool16/xxx    → 內部改寫為 /xxx，後面的路由不需要改
+const SITE_ORIGIN = 'https://amazon-hike.com';
+const BASE_PATH = '/tool16';
+const PAGE_URL = `${SITE_ORIGIN}${BASE_PATH}/`;
+
+app.use((req, res, next) => {
+  if (req.path === BASE_PATH) {
+    return res.redirect(301, BASE_PATH + '/' + req.url.slice(BASE_PATH.length));
+  }
+  if (req.url.startsWith(BASE_PATH + '/')) {
+    req.url = req.url.slice(BASE_PATH.length) || '/';
+  }
+  next();
+});
+
 // Enable JSON body parsing with large payload support for bulk import/excel data
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -371,27 +390,27 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-function getSiteBaseUrl(req: express.Request): string {
-  const envUrl = (process.env.SITE_URL || '').trim().replace(/\/+$/, '');
-  if (/^https?:\/\/[^\s"'<>]+$/i.test(envUrl)) return envUrl;
-  const host = String(req.get('host') || '');
-  const safeHost = /^[a-z0-9.-]+(:\d+)?$/i.test(host) ? host : 'localhost';
-  return `${req.protocol}://${safeHost}`;
-}
-
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function escapeHtml(s: string): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// 注意：Google 只讀取網域根目錄的 /robots.txt（屬於主站），
+// 這份只在直接存取本站時有效，真正生效的 Sitemap 宣告請寫在主站 robots.txt。
 app.get('/robots.txt', (req, res) => {
-  const base = getSiteBaseUrl(req);
   res.type('text/plain; charset=utf-8').send(
-    ['User-agent: *', 'Allow: /', '', `Sitemap: ${base}/sitemap.xml`, ''].join('\n')
+    ['User-agent: *', 'Allow: /', `Disallow: ${BASE_PATH}/api/`, '', `Sitemap: ${PAGE_URL}sitemap.xml`, ''].join('\n')
   );
 });
 
 app.get('/sitemap.xml', async (req, res) => {
-  const base = getSiteBaseUrl(req);
   let lastmod = '';
   try {
     const routes = await dbGetAllRoutes();
@@ -406,34 +425,48 @@ app.get('/sitemap.xml', async (req, res) => {
     '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     '  <url>\n' +
-    `    <loc>${escapeXml(base)}/</loc>\n` +
+    `    <loc>${escapeXml(PAGE_URL)}</loc>\n` +
     (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : '') +
     '  </url>\n' +
     '</urlset>\n';
   res.type('application/xml; charset=utf-8').send(xml);
 });
 
-function buildSeoHead(base: string): string {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      { '@type': 'Organization', '@id': `${base}/#organization`, name: '亞馬遜國家山岳協會', url: `${base}/` },
-      {
-        '@type': 'WebSite',
-        '@id': `${base}/#website`,
-        url: `${base}/`,
-        name: '上河地圖資料庫｜登山行程規劃',
-        inLanguage: 'zh-TW',
-        publisher: { '@id': `${base}/#organization` },
-      },
-    ],
-  };
-  const jsonLdText = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
-  return [
-    `<link rel="canonical" href="${base}/" />`,
-    `<meta property="og:url" content="${base}/" />`,
-    `<script type="application/ld+json">${jsonLdText}</script>`,
-  ].join('\n    ');
+// 伺服器端先把「路線清單」寫進 HTML，讓爬蟲不用執行 JavaScript 就能看到內容。
+// React 載入後 createRoot 會直接取代這一段，不影響畫面。
+let seoBodyCache: { html: string; at: number } | null = null;
+const SEO_BODY_TTL_MS = 5 * 60 * 1000;
+
+async function buildSeoBody(): Promise<string> {
+  if (seoBodyCache && Date.now() - seoBodyCache.at < SEO_BODY_TTL_MS) return seoBodyCache.html;
+
+  let items = '';
+  try {
+    const routes: any[] = await dbGetAllRoutes();
+    items = routes
+      .map((r) => {
+        const label = escapeHtml([r.code, r.name].filter(Boolean).join(' '));
+        const segCount = Array.isArray(r.segments) ? r.segments.length : 0;
+        const desc = r.description ? `：${escapeHtml(String(r.description).slice(0, 120))}` : '';
+        return `<li>${label}${segCount ? `（${segCount} 個路段）` : ''}${desc}</li>`;
+      })
+      .join('');
+  } catch (err) {
+    console.error('[SEO] Failed to load routes for SEO body:', err);
+  }
+
+  const html =
+    '<main id="seo-fallback">' +
+    '<nav aria-label="breadcrumb">' +
+    `<a href="${SITE_ORIGIN}/">首頁</a> / <a href="${SITE_ORIGIN}/tools">工具</a> / 上河地圖資料庫` +
+    '</nav>' +
+    '<h1>上河地圖資料庫｜登山行程規劃</h1>' +
+    '<p>亞馬遜國家山岳協會的上河地圖資料庫與登山行程規劃系統，整理玉山群峰、雪山、大霸尖山、能高越嶺等台灣高山路線的分段資料，協助規劃單日與多日登山行程。</p>' +
+    (items ? `<h2>收錄路線</h2><ul>${items}</ul>` : '') +
+    '</main>';
+
+  if (items) seoBodyCache = { html, at: Date.now() }; // 讀取失敗時不快取
+  return html;
 }
 
 app.all('/api/*', (req, res) => {
@@ -477,17 +510,28 @@ async function startServer() {
       })
     );
 
-    app.get('*', (req, res) => {
+    app.get('*', async (req, res) => {
       if (path.extname(req.path)) {
         return res.status(404).type('text/plain').send('Not Found');
       }
+      // 本站只有首頁一個頁面；其他路徑回真正的 404，避免「軟 404」被收錄成重複頁面
       if (req.path !== '/') {
-        res.setHeader('X-Robots-Tag', 'noindex, follow');
+        res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+        res.setHeader('Cache-Control', 'no-cache');
+        return res
+          .status(404)
+          .type('html')
+          .send(
+            '<!doctype html><html lang="zh-TW"><head><meta charset="utf-8"><title>找不到頁面</title>' +
+              '<meta name="robots" content="noindex"></head><body><h1>找不到頁面</h1>' +
+              `<p><a href="${PAGE_URL}">回到上河地圖資料庫</a></p></body></html>`
+          );
       }
       res.setHeader('Cache-Control', 'no-cache');
       try {
         if (indexTemplate === null) indexTemplate = fs.readFileSync(indexPath, 'utf-8');
-        const html = indexTemplate.replace('<!--SEO_HEAD-->', buildSeoHead(getSiteBaseUrl(req)));
+        const body = await buildSeoBody();
+        const html = indexTemplate.replace('<!--SEO_BODY-->', () => body);
         res.type('html').send(html);
       } catch (err) {
         console.error('[SEO] Failed to render index.html, falling back to static file:', err);

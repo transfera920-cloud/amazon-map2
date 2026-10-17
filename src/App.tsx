@@ -14,6 +14,7 @@ import { Navbar } from './components/Navbar';
 import { PlannerView } from './components/PlannerView';
 import { AdminModal } from './components/AdminModal';
 import { Mountain, ShieldCheck, Loader2 } from 'lucide-react';
+import { API_BASE } from './utils/urlHelper';
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   orgName: '亞馬遜國家山岳協會',
@@ -70,7 +71,7 @@ export default function App() {
 
   // Check admin session status on mount
   useEffect(() => {
-    fetch('/api/admin/status')
+    fetch(API_BASE + '/api/admin/status')
       .then(res => res.json())
       .then(data => {
         if (data.success && data.isAdmin) {
@@ -161,7 +162,7 @@ export default function App() {
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-[#10b981] animate-spin" />
           <div className="text-sm font-mono tracking-widest text-[#94a3b8] uppercase">
-            正在連線 Firestore 雲端資料庫載入圖資...
+            正在載入圖資...
           </div>
         </div>
       </div>
@@ -200,6 +201,7 @@ export default function App() {
 
       {/* Main Trip Planner Workspace */}
       <main className="flex-1">
+        <h1 className="sr-only">上河地圖資料庫｜登山行程規劃</h1>
         <PlannerView
           routes={routes}
           selectedRouteId={selectedRouteId}
@@ -227,6 +229,13 @@ export default function App() {
             <span>依據上河文化圖資標準步程計算</span>
           </div>
         </div>
+        <nav aria-label="breadcrumb" className="max-w-7xl mx-auto mt-4 pt-4 border-t border-[#1e2533] text-[11px] text-[#94a3b8] flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+          <a href="https://amazon-hike.com/" className="hover:text-[#34d399] transition-colors">首頁</a>
+          <span aria-hidden="true">/</span>
+          <a href="https://amazon-hike.com/tools" className="hover:text-[#34d399] transition-colors">工具</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="text-[#cbd5e1]">上河地圖資料庫</span>
+        </nav>
         <div className="max-w-7xl mx-auto mt-4 pt-4 border-t border-[#1e2533] text-[11px] text-[#64748b] leading-relaxed">
           安全提醒：登山行程規劃時間僅供參考，實際行進速度受個人體能、負重、天候路況及隊伍組成等因素影響。高山健行請做好充份體能訓練、攜帶合適裝備、留心氣象變化，並遵守無痕山林（LNT）與入山入園相關法規，安全第一。
         </div>
