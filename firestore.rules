@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 公開讀取集合：路線、路段、圖資、網站設定（寫入一律禁止，限伺服器端操作）
+    match /main_routes/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /route_segments/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /route_images/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /site_settings/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 禁止客戶端讀寫的內部集合（僅允許伺服器 admin SDK 存取）
+    match /route_backups/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /route_audit_logs/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /deleted_routes/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /_health/{document=**} {
+      allow read, write: if false;
+    }
+
+    // 預設規則：所有未匹配路徑一律禁止讀寫
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

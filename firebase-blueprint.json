@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "MainRoute": {
+      "title": "MainRoute",
+      "description": "A hiking main route containing metadata, map and gpx links",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 256 },
+        "mapUrl": { "type": "string", "maxLength": 2048 },
+        "gpxUrl": { "type": "string", "maxLength": 2048 },
+        "description": { "type": "string", "maxLength": 10000 },
+        "sortOrder": { "type": "number" },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "code", "name"]
+    },
+    "RouteSegment": {
+      "title": "RouteSegment",
+      "description": "A single hiking segment between two waypoints",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "routeId": { "type": "string", "maxLength": 128 },
+        "seq": { "type": "number" },
+        "planName": { "type": "string", "maxLength": 128 },
+        "startNode": { "type": "string", "maxLength": 128 },
+        "endNode": { "type": "string", "maxLength": 128 },
+        "duration": { "type": "number" },
+        "note": { "type": "string", "maxLength": 1000 },
+        "direction": { "type": "string", "maxLength": 64 },
+        "category": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "routeId", "seq", "startNode", "endNode", "duration"]
+    },
+    "RouteImage": {
+      "title": "RouteImage",
+      "description": "An image associated with a hiking route (e.g. itinerary or elevation profile)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "routeId": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 256 },
+        "url": { "type": "string", "maxLength": 2048 },
+        "sortOrder": { "type": "number" }
+      },
+      "required": ["id", "routeId", "type", "url"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Global application branding and titles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "orgName": { "type": "string", "maxLength": 128 },
+        "badgeText": { "type": "string", "maxLength": 64 },
+        "subTitle": { "type": "string", "maxLength": 256 },
+        "systemTitle": { "type": "string", "maxLength": 256 },
+        "logoInitial": { "type": "string", "maxLength": 16 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["orgName", "systemTitle"]
+    },
+    "RouteAuditLog": {
+      "title": "RouteAuditLog",
+      "description": "Audit record for route modifications, imports, and safety gate triggers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "maxLength": 64 },
+        "routeId": { "type": "string", "maxLength": 128 },
+        "operation": { "type": "string", "maxLength": 64 },
+        "reason": { "type": "string", "maxLength": 1000 },
+        "incomingCount": { "type": "number" },
+        "existingCount": { "type": "number" },
+        "expectedOriginalCount": { "type": "number" },
+        "clientVersion": { "type": "string", "maxLength": 64 },
+        "serverVersion": { "type": "string", "maxLength": 64 },
+        "result": { "type": "string", "maxLength": 1000 },
+        "status": { "type": "string", "maxLength": 32 }
+      },
+      "required": ["timestamp", "routeId", "operation", "status"]
+    },
+    "DeletedRoute": {
+      "title": "DeletedRoute",
+      "description": "Record of deleted routes for tombstone tracking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "deletedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "deletedAt"]
+    },
+    "RouteBackup": {
+      "title": "RouteBackup",
+      "description": "Full route snapshot backup taken before reset or major operations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "maxLength": 64 },
+        "routeCount": { "type": "number" },
+        "createdReason": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["id", "timestamp", "routeCount"]
+    }
+  },
+  "firestore": {
+    "/main_routes/{routeId}": {
+      "schema": "MainRoute",
+      "description": "Collection of all main hiking routes"
+    },
+    "/route_segments/{segmentId}": {
+      "schema": "RouteSegment",
+      "description": "Collection of hiking segments mapped by routeId"
+    },
+    "/route_images/{imageId}": {
+      "schema": "RouteImage",
+      "description": "Collection of itinerary and elevation profile images"
+    },
+    "/site_settings/{settingId}": {
+      "schema": "SiteSettings",
+      "description": "Global website configuration document"
+    },
+    "/route_audit_logs/{logId}": {
+      "schema": "RouteAuditLog",
+      "description": "Audit log documents"
+    },
+    "/route_backups/{backupId}": {
+      "schema": "RouteBackup",
+      "description": "Collection of pre-reset route backups"
+    },
+    "/deleted_routes/{routeId}": {
+      "schema": "DeletedRoute",
+      "description": "Deleted route tombstones"
+    }
+  }
+}

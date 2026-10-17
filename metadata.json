@@ -1,0 +1,8 @@
+{
+  "name": "上河地圖資料庫｜登山行程規劃",
+  "description": "亞馬遜國家山岳協會 - 上河地圖資料庫與登山行程規劃系統",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
